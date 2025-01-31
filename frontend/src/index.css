@@ -1,0 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Great+Vibes&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*{
+    font-family: Outfit;
+}
+.active hr{
+    @apply block
+}
+::-webkit-scrollbar{
+    @apply hidden
+}
