@@ -1,9 +1,14 @@
-// import express from 'express'
-// import { addDoctor } from '../controllers/adminController.js'
-// import multer from 'multer'
+import express from 'express'
+import { doctorList, loginDoctor, appointmentsDoctor, appointmentCancel, appointmentComplete } from '../controllers/doctorController.js'
+import authDoctor from '../middlewares/authDoctor.js'
 
-// const adminRouter = express.Router()
 
-// adminRouter.post('/add-doctor', upload.single('image'), addDoctor)
+const doctorRouter = express.Router()
 
-// export default adminRouter
+doctorRouter.get('/list',doctorList )
+doctorRouter.post('/login', loginDoctor)
+doctorRouter.get('/appointments', authDoctor, appointmentsDoctor)
+doctorRouter.post('/complete-appointment', authDoctor, appointmentComplete)
+doctorRouter.post('/cancel-appointment', authDoctor, appointmentCancel)
+
+export default doctorRouter
