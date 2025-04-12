@@ -5,104 +5,104 @@ import appointmentModel from "../models/appointmentModel.js"
 
 const changeAvailabilty = async (req, res) => {
     try {
-        
-        const {docId} = req.body
+
+        const { docId } = req.body
 
         const docData = await doctorModel.findById(docId)
-        await doctorModel.findByIdAndUpdate(docId, {available : !docData.available})
-        res.json({success:true, message:'Availabilty Changed'})
+        await doctorModel.findByIdAndUpdate(docId, { available: !docData.available })
+        res.json({ success: true, message: 'Availabilty Changed' })
 
-        
+
     } catch (error) {
-        
+
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 
-const doctorList = async (req,res)=> {
+const doctorList = async (req, res) => {
 
     try {
-        const doctors = await doctorModel.find({}).select(['-password','-email'])
-    res.json({success:true, doctors})
-        
+        const doctors = await doctorModel.find({}).select(['-password', '-email'])
+        res.json({ success: true, doctors })
+
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
-    
+
 }
 
 // API for the docotr Login
 
-const loginDoctor = async (req, res) =>{
+const loginDoctor = async (req, res) => {
     try {
 
-        const {email, password } = req.body
-        const doctor = await doctorModel.findOne({email})
+        const { email, password } = req.body
+        const doctor = await doctorModel.findOne({ email })
 
         if (!doctor) {
-            return res.json({success:false, message: 'Invalid credentials'})
+            return res.json({ success: false, message: 'Invalid credentials' })
         }
 
         const isMatch = await bcrypt.compare(password, doctor.password)
-        if(isMatch){
-            const token = jwt.sign({id:doctor._id}, process.env.JWT_SECRET)
+        if (isMatch) {
+            const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET)
 
-            res.json({success:true, token})
-        }else{
-            res.json({success:false, message: 'Invalid credentials'})
+            res.json({ success: true, token })
+        } else {
+            res.json({ success: false, message: 'Invalid credentials' })
         }
-        
+
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
+        res.json({ success: false, message: error.message })
     }
 }
 
 //  // API to get dashboard data for doctor panel
 
- const appointmentsDoctor = async (req, res) => {
+const appointmentsDoctor = async (req, res) => {
 
     try {
 
-        const {docId} = req.body
+        const { docId } = req.body
 
         const appointments = await appointmentModel.find({ docId })
 
-        res.json({ success:true, appointments})
+        res.json({ success: true, appointments })
 
-        
+
     } catch (error) {
         console.log(error)
-        res.json({success:false,message:error.message})
-        
-        
+        res.json({ success: false, message: error.message })
+
+
     }
 
- }
+}
 
 //Api to mark appointment completeted for docotr panel
 
 
-const appointmentComplete = async (req, res) =>{
+const appointmentComplete = async (req, res) => {
 
-    try{
+    try {
 
-        const {docId, appointmentId } = req.body
+        const { docId, appointmentId } = req.body
         const appointmentData = await appointmentModel.findById(appointmentId)
 
-        if(appointmentData && appointmentData.docId === docId) {
+        if (appointmentData && appointmentData.docId === docId) {
 
-            await appointmentModel.findByIdAndUpdate(appointmentId, {isCompleted : true})
-            return res.json({success:true,message:'Appointment Completed'})
+            await appointmentModel.findByIdAndUpdate(appointmentId, { isCompleted: true })
+            return res.json({ success: true, message: 'Appointment Completed' })
 
-        } else{
-            return res.json({success:false,message:'Marked failed'})
+        } else {
+            return res.json({ success: false, message: 'Marked failed' })
         }
-    }catch (error){
+    } catch (error) {
         console.log(error)
-        return res.json({success:false,message:error.message})
+        return res.json({ success: false, message: error.message })
     }
 }
 
@@ -110,28 +110,103 @@ const appointmentComplete = async (req, res) =>{
 //Api to cancel appointment  for docotr panel
 
 
-const appointmentCancel = async (req, res) =>{
+const appointmentCancel = async (req, res) => {
 
-    try{
+    try {
 
-        const {docId, appointmentId } = req.body
+        const { docId, appointmentId } = req.body
         const appointmentData = await appointmentModel.findById(appointmentId)
 
-        if(appointmentData && appointmentData.docId === docId) {
+        if (appointmentData && appointmentData.docId === docId) {
 
-            await appointmentModel.findByIdAndUpdate(appointmentId, {cancelled : true})
-            return res.json({success:true,message:'Appointment Cancelled'})
+            await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
+            return res.json({ success: true, message: 'Appointment Cancelled' })
 
-        } else{
-            return res.json({success:false,message:'Cancellation Failed'})
+        } else {
+            return res.json({ success: false, message: 'Cancellation Failed' })
         }
-    }catch (error){
+    } catch (error) {
         console.log(error)
-        return res.json({success:false,message:error.message})
+        return res.json({ success: false, message: error.message })
     }
 }
 
+//API to get dashBoard data for docotr panel
+
+const doctorDashboard = async (req, res) => {
+    try {
+
+        const { docId } = req.body
+        const appointments = await appointmentModel.find({ docId })
+        let earings = 0
+        appointments.map((item) => {
+            if (item.isCompleted || item.payment) {
+                earings += item.amount
+
+            }
+        })
+
+        let patients = []
+
+        appointments.map((item) => {
+            if (patients.includes(item.userId)) {
+                patients.push(item.userId)
+
+            }
+        })
+
+        const dashData = {
+            earings,
+            appointments: appointments.length,
+            patients: patients.length,
+            latestAppointments: appointments.reverse().slice(0, 5)
+        }
+
+        res.json({ success: true, dashData })
 
 
+    } catch (error) {
+        console.log(error)
+        return res.json({ success: false, message: error.message })
+    }
+}
 
-export {changeAvailabilty, doctorList, loginDoctor, appointmentsDoctor, appointmentCancel, appointmentComplete}
+//Api to get docotr profile for Doctor panel
+
+const doctorProfile = async (req, res) => {
+    try {
+        const { docId } = req.body
+        const profileData = await doctorModel.findById(docId).select('-password')
+
+        res.json({ success: true, profileData })
+
+    } catch (error) {
+        console.log(error)
+        return res.json({ success: false, message: error.message })
+    }
+}
+
+//api updateDoctorprofile data from Docotr panel
+
+const updateDoctorProfile = async (req, res) => {
+    try {
+
+        const { docId, fees, address, available } = req.body
+
+        await doctorModel.findByIdAndUpdate(docId, { fees, address, available })
+
+        res.json({ success: true, message:'Profile Updated' })
+
+    } catch (error) {
+        console.log(error)
+        return res.json({ success: false, message: error.message })
+    }
+}
+
+export {
+    changeAvailabilty, doctorList,
+    loginDoctor,
+    appointmentsDoctor, appointmentCancel, appointmentComplete,
+    doctorDashboard, doctorProfile,
+    updateDoctorProfile
+}
