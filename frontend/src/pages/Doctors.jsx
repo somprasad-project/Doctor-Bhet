@@ -22,7 +22,8 @@ const Doctors = () => {
     }, [doctors, speciality]);
 
     return (
-        <div>
+        
+        <div className='pt-8'>
             <p className='text-gray-600'>Browse through the doctors by speciality.</p>
             <div className='flex flex-col sm:flex-row items-start gap-5 mt-5'>
                 <div className='flex flex-col gap-4 text-sm text-gray-600'>
@@ -54,3 +55,6 @@ const Doctors = () => {
 }
 
 export default Doctors;
+
+
+

@@ -2,6 +2,8 @@ import doctorModel from "../models/doctorModel.js"
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import appointmentModel from "../models/appointmentModel.js"
+import userModel from '../models/userModel.js';
+import sendEmail from '../utils/sendEmail.js';
 
 const changeAvailabilty = async (req, res) => {
     try {
@@ -85,51 +87,127 @@ const appointmentsDoctor = async (req, res) => {
 //Api to mark appointment completeted for docotr panel
 
 
+// const appointmentComplete = async (req, res) => {
+
+//     try {
+
+//         const { docId, appointmentId } = req.body
+//         const appointmentData = await appointmentModel.findById(appointmentId)
+
+//         if (appointmentData && appointmentData.docId === docId) {
+
+//             await appointmentModel.findByIdAndUpdate(appointmentId, { isCompleted: true })
+//             return res.json({ success: true, message: 'Appointment Completed' })
+
+//         } else {
+//             return res.json({ success: false, message: 'Marked failed' })
+//         }
+//     } catch (error) {
+//         console.log(error)
+//         return res.json({ success: false, message: error.message })
+//     }
+// }
+
+
+
 const appointmentComplete = async (req, res) => {
-
     try {
+        const { docId, appointmentId } = req.body;
 
-        const { docId, appointmentId } = req.body
-        const appointmentData = await appointmentModel.findById(appointmentId)
+        const appointmentData = await appointmentModel.findById(appointmentId);
 
-        if (appointmentData && appointmentData.docId === docId) {
-
-            await appointmentModel.findByIdAndUpdate(appointmentId, { isCompleted: true })
-            return res.json({ success: true, message: 'Appointment Completed' })
-
-        } else {
-            return res.json({ success: false, message: 'Marked failed' })
+        if (!appointmentData) {
+            return res.json({ success: false, message: 'Appointment not found' });
         }
+
+        if (appointmentData.docId.toString() !== docId) {
+            return res.json({ success: false, message: 'Unauthorized action' });
+        }
+
+        // ✅ Update appointment status
+        await appointmentModel.findByIdAndUpdate(appointmentId, { isCompleted: true });
+
+        // ✅ Fetch patient details
+        const patient = await userModel.findById(appointmentData.userId);
+
+        if (patient) {
+            const subject = 'Appointment Completed';
+            const message = `Dear ${patient.name},\n\nYour appointment scheduled on ${appointmentData.slotDate} at ${appointmentData.slotTime} has been successfully marked as completed.\n\nWe hope you had a good consultation.\n\nThank you,\nAppointment Team`;
+
+            await sendEmail(patient.email, subject, message);
+        }
+
+        return res.json({ success: true, message: 'Appointment marked as completed and patient notified' });
+
     } catch (error) {
-        console.log(error)
-        return res.json({ success: false, message: error.message })
+        console.log(error);
+        return res.json({ success: false, message: error.message });
     }
-}
+};
 
 
-//Api to cancel appointment  for docotr panel
 
+// //Api to cancel appointment  for docotr panel
+
+
+// const appointmentCancel = async (req, res) => {
+
+//     try {
+
+//         const { docId, appointmentId } = req.body
+//         const appointmentData = await appointmentModel.findById(appointmentId)
+
+//         if (appointmentData && appointmentData.docId === docId) {
+
+//             await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
+//             return res.json({ success: true, message: 'Appointment Cancelled' })
+
+//         } else {
+//             return res.json({ success: false, message: 'Cancellation Failed' })
+//         }
+//     } catch (error) {
+//         console.log(error)
+//         return res.json({ success: false, message: error.message })
+//     }
+// }
+
+//appointementCancel and sending mail 
 
 const appointmentCancel = async (req, res) => {
-
     try {
+        const { docId, appointmentId } = req.body;
 
-        const { docId, appointmentId } = req.body
-        const appointmentData = await appointmentModel.findById(appointmentId)
+        const appointmentData = await appointmentModel.findById(appointmentId);
 
-        if (appointmentData && appointmentData.docId === docId) {
-
-            await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
-            return res.json({ success: true, message: 'Appointment Cancelled' })
-
-        } else {
-            return res.json({ success: false, message: 'Cancellation Failed' })
+        if (!appointmentData) {
+            return res.json({ success: false, message: 'Appointment not found' });
         }
+
+        if (appointmentData.docId.toString() !== docId) {
+            return res.json({ success: false, message: 'Unauthorized action' });
+        }
+
+        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
+
+        // ✅ Fetch patient details
+        const patient = await userModel.findById(appointmentData.userId);
+
+        if (patient) {
+            const subject = 'Appointment Cancellation by Doctor';
+            const message = `Dear ${patient.name},\n\nYour appointment scheduled on ${appointmentData.slotDate} at ${appointmentData.slotTime} has been cancelled by the doctor.\n\nWe apologize for the inconvenience.\n\nThank you,\nAppointment Team`;
+
+            await sendEmail(patient.email, subject, message);
+        }
+
+        return res.json({ success: true, message: 'Appointment Cancelled and patient notified' });
+
     } catch (error) {
-        console.log(error)
-        return res.json({ success: false, message: error.message })
+        console.log(error);
+        return res.json({ success: false, message: error.message });
     }
-}
+};
+
+
 
 //API to get dashBoard data for docotr panel
 

@@ -5,43 +5,100 @@ import doctorModel from '../models/doctorModel.js'
 import jwt from 'jsonwebtoken'
 import appointmentModel from '../models/appointmentModel.js'
 import userModel from '../models/userModel.js'
-//API for Adding Doctor
+import sendEmail from '../utils/sendEmail.js';
+// //API for Adding Doctor
 
-const addDoctor = async (req,res) => {
-    try{
-        const { name, email, password, speciality, degree, experience, about, fees, address } = req.body
-        const imageFile = req.file
-        // console.log({ name, email, password, speciality, degree, experience, about, fess, address }, imageFile);
+// const addDoctor = async (req,res) => {
+//     try{
+//         const { name, email, password, speciality, degree, experience, about, fees, address } = req.body
+//         const imageFile = req.file
+//         // console.log({ name, email, password, speciality, degree, experience, about, fess, address }, imageFile);
 
-        //checking for all data to add docotr
+//         //checking for all data to add docotr
 
-        if( !name || !email || !password || !speciality || !degree  || !experience || !about || !fees || !address){
-            return res.json({success:false, message:"Missing Details"})
+//         if( !name || !email || !password || !speciality || !degree  || !experience || !about || !fees || !address){
+//             return res.json({success:false, message:"Missing Details"})
 
+//         }
+
+//         //validating email format
+
+//         if(!validator.isEmail(email)){
+
+//             return res.json({success:false, message:"please enter the valid email"})
+//         }
+
+//         // validating strong password
+
+//         if(password.length < 8){
+//             return res.json({success:false, message:"please enter a strong password"})
+
+//         }
+
+//         // salt ot hashing the docotr password
+//         const salt = await bcrypt.genSalt(10)
+//         const hashedPassword = await bcrypt.hash(password, salt)
+
+
+//         //uploading image to cloudnary
+//         const imageUpload = await cloudinary.uploader.upload(imageFile.path, {resource_type:"image"})
+//         const imageUrl = imageUpload.secure_url
+
+//         const doctorData = {
+//             name,
+//             email,
+//             image: imageUrl,
+//             password: hashedPassword,
+//             speciality,
+//             degree,
+//             experience,
+//             about,
+//             fees,
+//             address: JSON.parse(address), // Convert JSON string to object
+//             date: Date.now() // Get current timestamp
+       
+
+//         }
+
+//         const newDoctor = new doctorModel(doctorData)
+//         await newDoctor.save()
+
+//         res.json({success:true, message:"Doctor Added"})
+
+        
+
+//      } catch (error){
+
+//         console.log(error)
+//         res.json({success:false,message:error.message})
+
+//      }
+
+// }
+
+
+const addDoctor = async (req, res) => {
+    try {
+        const { name, email, password, speciality, degree, experience, about, fees, address } = req.body;
+        const imageFile = req.file;
+
+        if (!name || !email || !password || !speciality || !degree || !experience || !about || !fees || !address) {
+            return res.json({ success: false, message: "Missing Details" });
         }
 
-        //validating email format
-
-        if(!validator.isEmail(email)){
-
-            return res.json({success:false, message:"please enter the valid email"})
+        if (!validator.isEmail(email)) {
+            return res.json({ success: false, message: "Please enter a valid email" });
         }
 
-        // validating strong password
-
-        if(password.length < 8){
-            return res.json({success:false, message:"please enter a strong password"})
-
+        if (password.length < 8) {
+            return res.json({ success: false, message: "Please enter a strong password" });
         }
 
-        // salt ot hashing the docotr password
-        const salt = await bcrypt.genSalt(10)
-        const hashedPassword = await bcrypt.hash(password, salt)
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-
-        //uploading image to cloudnary
-        const imageUpload = await cloudinary.uploader.upload(imageFile.path, {resource_type:"image"})
-        const imageUrl = imageUpload.secure_url
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, { resource_type: "image" });
+        const imageUrl = imageUpload.secure_url;
 
         const doctorData = {
             name,
@@ -53,27 +110,27 @@ const addDoctor = async (req,res) => {
             experience,
             about,
             fees,
-            address: JSON.parse(address), // Convert JSON string to object
-            date: Date.now() // Get current timestamp
-       
+            address: JSON.parse(address),
+            date: Date.now()
+        };
 
-        }
+        const newDoctor = new doctorModel(doctorData);
+        await newDoctor.save();
 
-        const newDoctor = new doctorModel(doctorData)
-        await newDoctor.save()
+        // ✅ Send email to doctor
+        const subject = "Welcome to Our Platform";
+        const message = `Dear Dr. ${name},\n\nYour profile has been successfully added to our platform.\nYou can now log in and start receiving appointments. for the Email and Password contact office. \n\nThank you,\nAdmin Team`;
 
-        res.json({success:true, message:"Doctor Added"})
+        await sendEmail(email, subject, message);
 
-        
+        res.json({ success: true, message: "Doctor Added and email sent" });
 
-     } catch (error){
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
 
-        console.log(error)
-        res.json({success:false,message:error.message})
-
-     }
-
-}
 
 // api for the admin login
 
